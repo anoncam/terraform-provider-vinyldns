@@ -102,6 +102,10 @@ func resourceVinylDNSZone() *schema.Resource {
 							Elem: &schema.Schema{
 								Type: schema.TypeString,
 							},
+						"insecure": &schema.Schema{
+							Type:     schema.TypeBool,
+							Optional: true,
+							Default:  false,
 						},
 					},
 				},
@@ -113,6 +117,13 @@ func resourceVinylDNSZone() *schema.Resource {
 func resourceVinylDNSZoneCreate(d *schema.ResourceData, meta interface{}) error {
 	name := d.Get("name").(string)
 	log.Printf("[INFO] Creating vinyldns zone: %s", name)
+
+	insecure := d.Get("insecure").(bool)
+	if insecure {
+		// disable certificate verification
+		d.Set("insecure", insecure)
+	}
+
 	change, err := meta.(*vinyldns.Client).ZoneCreate(zone(d))
 	if err != nil {
 		return err
@@ -128,6 +139,8 @@ func resourceVinylDNSZoneCreate(d *schema.ResourceData, meta interface{}) error 
 	if err != nil {
 		return err
 	}
+
+	// Remove unreachable code here
 
 	return resourceVinylDNSZoneRead(d, meta)
 }
@@ -159,6 +172,7 @@ func resourceVinylDNSZoneRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("created", zone.Created)
 	d.Set("updated", zone.Updated)
 	d.Set("latest_sync", zone.LatestSync)
+	d.Get("insecure").(bool)
 
 	if zone.ACL != nil {
 		acls := buildACLRules(zone.ACL)
@@ -418,6 +432,10 @@ func zone(d *schema.ResourceData) *vinyldns.Zone {
 
 	if d.Get("transfer_connection.0.name").(string) != "" {
 		zone.TransferConnection = transferConnection(d)
+	}
+	if d.Get("insecure").(bool) {
+		// disable certificate verification
+		zone.Insecure = true
 	}
 
 	shared := d.Get("shared").(bool)

@@ -39,6 +39,11 @@ func Provider() terraform.ResourceProvider {
 				Optional:    true,
 				DefaultFunc: envDefaultFunc("VINYLDNS_HOST"),
 			},
+			"insecure": &schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: true,
+				Default:  false,
+				Description: "If true, the provider will not verify the server's certificate chain and host name. ",
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
@@ -77,6 +82,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		AccessKey: d.Get("access_key").(string),
 		SecretKey: d.Get("secret_key").(string),
 		Host:      d.Get("host").(string),
+		Insecure:  d.Get("insecure").(bool),
 		UserAgent: GetUserAgent(),
 	}
 
